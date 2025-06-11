@@ -1,26 +1,20 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode, useEffect } from "react"
+import { createContext, useContext, type ReactNode, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { SessionProvider, signIn, signOut, useSession } from "next-auth/react"
 
 interface User {
-  id: string
-  username: string
-  email: string
-  avatar?: string
-  bio?: string
-  genre?: string
-  linkedAccounts?: {
-    youtube?: { username: string; linked: boolean }
-    instagram?: { username: string; linked: boolean }
-    tiktok?: { username: string; linked: boolean }
-  }
+  id?: string
+  name?: string
+  email?: string
+  image?: string
 }
 
 interface AuthContextType {
   isAuthenticated: boolean
   user: User | null
-  login: (userData: Partial<User>) => void
+  login: (provider?: string) => void
   updateUser: (userData: Partial<User>) => void
   logout: () => void
   isLoading: boolean
@@ -28,68 +22,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+const InnerAuthProvider = ({ children }: { children: ReactNode }) => {
+  const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    // Simulate checking auth status from localStorage or an API
-    const storedUser = localStorage.getItem("hiveUser")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setIsLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (!isLoading) {
+    if (status !== "loading") {
       const isAuthPage = pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up")
-      if (!user && !isAuthPage && pathname !== "/") {
+      if (!session && !isAuthPage && pathname !== "/") {
         router.push("/sign-in")
-      } else if (user && isAuthPage) {
+      } else if (session && isAuthPage) {
         router.push("/dashboard")
       }
     }
-  }, [user, isLoading, pathname, router])
+  }, [session, status, pathname, router])
 
-  const login = (userData: Partial<User>) => {
-    const newUser: User = {
-      id: userData.id || `user-${Date.now()}`,
-      username: userData.username || "User",
-      email: userData.email || "user@example.com",
-      avatar: userData.avatar || `https://avatar.vercel.sh/${userData.username || "user"}.png`,
-      bio: userData.bio || "",
-      genre: userData.genre || "",
-      linkedAccounts: userData.linkedAccounts || {
-        youtube: { username: "", linked: false },
-        instagram: { username: "", linked: false },
-        tiktok: { username: "", linked: false },
-      },
-    }
-    setUser(newUser)
-    localStorage.setItem("hiveUser", JSON.stringify(newUser))
-    router.push("/dashboard")
+  const login = (provider?: string) => {
+    signIn(provider, { callbackUrl: "/dashboard" })
   }
 
-  const updateUser = (userData: Partial<User>) => {
-    if (!user) return
-    const updatedUser = { ...user, ...userData }
-    setUser(updatedUser)
-    localStorage.setItem("hiveUser", JSON.stringify(updatedUser))
+  const updateUser = (_userData: Partial<User>) => {
+    // profile updates would be handled via API routes
   }
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("hiveUser")
-    router.push("/sign-in")
+    signOut({ callbackUrl: "/sign-in" })
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, login, updateUser, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!session,
+        user: session?.user as User ?? null,
+        login,
+        updateUser,
+        logout,
+        isLoading: status === "loading",
+      }}
+    >
       {children}
     </AuthContext.Provider>
+  )
+}
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  return (
+    <SessionProvider>
+      <InnerAuthProvider>{children}</InnerAuthProvider>
+    </SessionProvider>
   )
 }
 
