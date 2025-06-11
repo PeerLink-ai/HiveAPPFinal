@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/lib/auth"
+import { signIn } from "next-auth/react"
 import { useState, type FormEvent } from "react"
 import { Separator } from "@/components/ui/separator"
 
 export default function SignInPage() {
-  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -20,26 +19,16 @@ export default function SignInPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    // In a real app, you'd validate credentials here
-    login({ email, username: email.split("@")[0] || "DemoUser" }) // Mock login
-    setIsLoading(false)
+    await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/dashboard",
+      redirect: true,
+    })
   }
 
-  const handleSocialLogin = async (provider: string) => {
-    setIsLoading(true)
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    // Mock social login
-    login({
-      email: `user@${provider.toLowerCase()}.com`,
-      username: `${provider}User${Math.floor(Math.random() * 1000)}`,
-    })
-    setIsLoading(false)
+  const handleSocialLogin = (provider: string) => {
+    signIn(provider.toLowerCase(), { callbackUrl: "/dashboard" })
   }
 
   return (
@@ -116,11 +105,11 @@ export default function SignInPage() {
               type="button"
               variant="outline"
               className="h-11"
-              onClick={() => handleSocialLogin("Facebook")}
+              onClick={() => handleSocialLogin("Instagram")}
               disabled={isLoading}
             >
-              <Image src="/placeholder.svg?width=20&height=20" alt="Facebook" width={20} height={20} className="mr-2" />
-              Facebook
+              <Image src="/placeholder.svg?width=20&height=20" alt="Instagram" width={20} height={20} className="mr-2" />
+              Instagram
             </Button>
           </div>
         </CardContent>

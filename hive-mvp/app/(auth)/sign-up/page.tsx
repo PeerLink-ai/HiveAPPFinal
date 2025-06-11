@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/lib/auth"
+import { signIn } from "next-auth/react"
 import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SignUpPage() {
-  const { login } = useAuth()
   const router = useRouter()
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
@@ -27,26 +26,16 @@ export default function SignUpPage() {
 
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    // In a real app, you'd create the user here
-    login({ email, username }) // Mock login after sign up
-    router.push("/profile-setup") // Redirect to profile setup after sign up
+    await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/profile-setup",
+      redirect: true,
+    })
   }
 
-  const handleSocialSignup = async (provider: string) => {
-    setIsLoading(true)
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    // Mock social signup
-    login({
-      email: `user@${provider.toLowerCase()}.com`,
-      username: `${provider}User${Math.floor(Math.random() * 1000)}`,
-    })
-    router.push("/profile-setup")
+  const handleSocialSignup = (provider: string) => {
+    signIn(provider.toLowerCase(), { callbackUrl: "/profile-setup" })
   }
 
   return (
@@ -153,11 +142,11 @@ export default function SignUpPage() {
               type="button"
               variant="outline"
               className="h-11"
-              onClick={() => handleSocialSignup("Facebook")}
+              onClick={() => handleSocialSignup("Instagram")}
               disabled={isLoading}
             >
-              <Image src="/placeholder.svg?width=20&height=20" alt="Facebook" width={20} height={20} className="mr-2" />
-              Facebook
+              <Image src="/placeholder.svg?width=20&height=20" alt="Instagram" width={20} height={20} className="mr-2" />
+              Instagram
             </Button>
           </div>
         </CardContent>
