@@ -1,0 +1,20 @@
+{
+  "name": "package.json",
+  "version": "1.0.0",
+  "description": "hehe",
+  "homepage": "https://github.com/PeerLink-ai/HiveAPPFinal#readme",
+  "bugs": {
+    "url": "https://github.com/PeerLink-ai/HiveAPPFinal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeerLink-ai/HiveAPPFinal.git"
+  },
+  "license": "ISC",
+  "author": "Andrew McMorrow",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm start"
+  }
+}
